@@ -73,33 +73,31 @@ class Company {
    */
 
   static async search({ nameLike, minEmployees, maxEmployees }) {
-    if (minEmployees && maxEmployees && minEmployees > maxEmployees) {
-      throw new BadRequestError(
-        "value for minEmployees should be equal to or less than maxEmployees"
-      );
-    }
+    let input = { nameLike, minEmployees, maxEmployees };
+    let mapping = {
+      nameLike: "name ILIKE",
+      minEmployees: "num_employees >=",
+      maxEmployees: "num_employees <=",
+    };
 
-    const { setCols, values } = sqlForFilter(
-      { nameLike, minEmployees, maxEmployees },
-      {
-        nameLike: "name ILIKE",
-        minEmployees: "num_employees >=",
-        maxEmployees: "num_employees <=",
-      }
-    );
+    for (let key in input) {
+      if (input[key] === undefined) {
+        delete mapping[key];
+        delete input[key];
+      };
+    };
+    console.log("input", input);
+    const { setCols, values } = sqlForFilter(input, mapping);
+    const companies = await db.query(`
+              SELECT handle,
+                    name,
+                    description,
+                    num_employees AS "numEmployees",
+                    logo_url      AS "logoUrl"
+              FROM companies
+                WHERE ${setCols}
+                ORDER BY name`,[...values]);
 
-    const companies = await db.query(
-      `
-    SELECT handle,
-           name,
-           description,
-           num_employees AS "numEmployees",
-           logo_url      AS "logoUrl"
-    FROM companies
-    WHERE ${setCols}
-    ORDER BY name`,
-      [...values]
-    );
     return companies.rows;
   }
 

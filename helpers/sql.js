@@ -21,7 +21,7 @@ const { BadRequestError } = require("../expressError");
 function sqlForPartialUpdate(dataToUpdate, jsToSql) {
   const keys = Object.keys(dataToUpdate);
   if (keys.length === 0) throw new BadRequestError("No data"); //empty body
-  // keys: {firstName: 'Aliya', email: 'newEmail@a.com}
+  // keys: [firstName: 'Aliya', email: 'newEmail@a.com]
 
   const cols = keys.map(
     (colName, idx) => `"${jsToSql[colName] || colName}"=$${idx + 1}`
@@ -35,17 +35,36 @@ function sqlForPartialUpdate(dataToUpdate, jsToSql) {
   // {setCols:`"first_name"=$1, "email"=$2`, values:["Aliya", "newEmail@a.com"]}
 }
 
-//dataToFilter = { nameLike: '3m', minEmployees: 100, maxEmployees: 1000}
+/** Helps with filtering values from JS -> SQL
+ *
+ *  Inputs:
+ *    dataToFilter: an object from the req.query (JSON) that contains
+ *                        {nameLike: 'm', minEmployees: '100'}
+ *
+ *    jsToSql: an object that contains mappings between JS variables to
+ *             SQL WHERE conditionals (if applicable)
+ *                        {nameLike: "name ILIKE",
+ *                         minEmployees: "num_employees >=",
+ *                         maxEmployees: "num_employees <=",}
+ * Outputs:
+ *    {
+ *        setCols: "name ILIKE $1 AND num_employees >= $2 AND num_employees <= $3",
+ *        values:["3m", 100, 1000]
+ *    }
+ *
+ *    setCols: a string literal used to inject into SQL WHERE to filter
+ *    values: an array of values-to-update to inject into SQL for filtering values
+ *
+ */
 function sqlForFilter(dataToFilter, jsToSql) {
   const keys = Object.keys(dataToFilter);
-  if (keys.length === 0) throw new BadRequestError("No data"); //empty body
-  // keys: [nameLike, minEmployees, maxEmployees]
+  if (keys.length === 0) throw new BadRequestError("No data");
 
   const cols = keys.map(
     (colName, idx) => `${jsToSql[colName] || colName} $${idx + 1}`
   );
-  // cols: [`name ILIKE $1`, `num_employees >= $2`, `num_employees <= $3`]
 
+  //passing in SQL string pattern %%
   if (dataToFilter["nameLike"]) {
     dataToFilter["nameLike"] = `%${dataToFilter.nameLike}%`;
   }
@@ -54,8 +73,6 @@ function sqlForFilter(dataToFilter, jsToSql) {
     setCols: cols.join(" AND "),
     values: Object.values(dataToFilter),
   };
-  // {setCols: "name ILIKE $1 AND num_employees >= $2 AND num_employees <= $3",
-  //  values:["3m", 100, 1000]}
 }
 
 module.exports = { sqlForPartialUpdate, sqlForFilter };

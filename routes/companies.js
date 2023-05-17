@@ -7,11 +7,12 @@ const express = require("express");
 
 const { BadRequestError } = require("../expressError");
 const { ensureLoggedIn } = require("../middleware/auth");
+const { authenticateQuery } = require("../middleware/query");
 const Company = require("../models/company");
 
 const companyNewSchema = require("../schemas/companyNew.json");
 const companyUpdateSchema = require("../schemas/companyUpdate.json");
-const companySearchSchema = require("../schemas/companySearch.json");
+// const companySearchSchema = require("../schemas/companySearch.json");
 
 const router = new express.Router();
 
@@ -48,34 +49,13 @@ router.post("/", ensureLoggedIn, async function (req, res, next) {
  * Authorization required: none
  */
 
-router.get("/", async function (req, res, next) {
-  console.log("req.query= ", req.query);
-  let nameLike = req.query.nameLike || undefined;
-  let minEmployees = Number(req.query.minEmployees) || undefined;
-  let maxEmployees = Number(req.query.maxEmployees) || undefined;
-
-  let queries = {
-    nameLike,
-    minEmployees,
-    maxEmployees,
-  };
-
-  console.log("queries= ", queries);
-
-  const validator = jsonschema.validate(queries, companySearchSchema, {
-    required: true,
-  });
-  if (!validator.valid) {
-    const errs = validator.errors.map((e) => e.stack);
-    throw new BadRequestError(errs);
-  }
-
-  //Checking if we're getting any search queries
+router.get("/", authenticateQuery, async function (req, res, next) {
   let companies;
-  if (req.query) {
-    companies = await Company.search(queries);
-  } else {
+
+  if (!req.query) {
     companies = await Company.findAll();
+  } else {
+    companies = await Company.search(req.query);
   }
 
   return res.json({ companies });
