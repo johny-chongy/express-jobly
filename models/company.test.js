@@ -57,6 +57,7 @@ describe("create", function () {
 });
 
 /************************************** findAll */
+//TODO: test Company.findAll() with filters | test that filter works
 
 describe("findAll", function () {
   test("works: no filter", async function () {

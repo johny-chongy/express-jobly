@@ -48,29 +48,28 @@ function sqlForPartialUpdate(dataToUpdate, jsToSql) {
  *                         maxEmployees: "num_employees <=",}
  * Outputs:
  *    {
- *        setCols: "name ILIKE $1 AND num_employees >= $2 AND num_employees <= $3",
+ *        filterWhere: "name ILIKE $1 AND num_employees >= $2 AND num_employees <= $3",
  *        values:["3m", 100, 1000]
  *    }
  *
- *    setCols: a string literal used to inject into SQL WHERE to filter
+ *    filterWhere: a string literal used to inject into SQL WHERE to filter
  *    values: an array of values-to-update to inject into SQL for filtering values
  *
  */
 function sqlForFilter(dataToFilter, jsToSql) {
   const keys = Object.keys(dataToFilter);
-  if (keys.length === 0) throw new BadRequestError("No data");
 
-  const cols = keys.map(
-    (colName, idx) => `${jsToSql[colName] || colName} $${idx + 1}`
+  const whereConditionals = keys.map(
+    (queryString, idx) => `${jsToSql[queryString] || queryString} $${idx + 1}`
   );
 
-  //passing in SQL string pattern %%
+  //passing in SQL string pattern '%nameLike%'
   if (dataToFilter["nameLike"]) {
     dataToFilter["nameLike"] = `%${dataToFilter.nameLike}%`;
   }
 
   return {
-    setCols: cols.join(" AND "),
+    filterWhere: whereConditionals.join(" AND "),
     values: Object.values(dataToFilter),
   };
 }

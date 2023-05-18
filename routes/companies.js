@@ -12,7 +12,7 @@ const Company = require("../models/company");
 
 const companyNewSchema = require("../schemas/companyNew.json");
 const companyUpdateSchema = require("../schemas/companyUpdate.json");
-// const companySearchSchema = require("../schemas/companySearch.json");
+const companySearchSchema = require("../schemas/companySearch.json");
 
 const router = new express.Router();
 
@@ -50,13 +50,28 @@ router.post("/", ensureLoggedIn, async function (req, res, next) {
  */
 
 router.get("/", authenticateQuery, async function (req, res, next) {
-  let companies;
-  console.log("req.query.length =", req.query.length);
-  if (!req.query || Object.keys(req.query).length === 0) {
-    companies = await Company.findAll();
-  } else {
-    companies = await Company.search(req.query);
+  /** TODO: 1. make copy of req.query
+   *  2. pass copy through JSON schema
+  */
+  let query = {};
+  console.log(Number(req.query.maxEmployees));
+  for (let queryString in req.query) {
+    if (queryString === "nameLike") {
+      query[queryString] = req.query.nameLike;
+    } else {
+      query[queryString] = Number(req.query[queryString]);
+    }
+  };
+
+  const validator = jsonschema.validate(query, companySearchSchema, {
+    required: true,
+  });
+  if (!validator.valid) {
+    const errs = validator.errors.map((e) => e.stack);
+    throw new BadRequestError(errs);
   }
+
+  const companies = await Company.findAll(query);
 
   return res.json({ companies });
 });

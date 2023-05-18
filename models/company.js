@@ -1,5 +1,6 @@
 "use strict";
 
+const { query } = require("express");
 const db = require("../db");
 const { BadRequestError, NotFoundError } = require("../expressError");
 const { sqlForPartialUpdate, sqlForFilter } = require("../helpers/sql");
@@ -54,7 +55,10 @@ class Company {
    * Returns [{ handle, name, description, numEmployees, logoUrl }, ...]
    * */
 
-  static async findAll() {
+  static async findAll(filter) {
+    //TODO: accept search return value (default {})
+    const searchFilter = await Company.search(filter) || {};
+    console.log(searchFilter)
     const companiesRes = await db.query(`
         SELECT handle,
                name,
@@ -62,7 +66,9 @@ class Company {
                num_employees AS "numEmployees",
                logo_url      AS "logoUrl"
         FROM companies
-        ORDER BY name`);
+        ${"WHERE " + searchFilter.whereSqlString}
+        ORDER BY name`, searchFilter.filterValues);
+
     return companiesRes.rows;
   }
 
@@ -72,33 +78,28 @@ class Company {
    * e.g., [{ handle, name, description, numEmployees, logoUrl }, ...]
    */
 
-  static async search({ nameLike, minEmployees, maxEmployees }) {
-    let input = { nameLike, minEmployees, maxEmployees };
-    let mapping = {
-      nameLike: "name ILIKE",
-      minEmployees: "num_employees >=",
-      maxEmployees: "num_employees <=",
+  static async search(queryStrings) {
+    //TODO: return filter WHERE and values to findAll() -> conditional on "" -> just findAll()
+    //TODO: use whereClause.length for $ injection value (push into values first -> generate whereClause string)
+    const whereClause = []; // array of strings
+    const filterValues = []; // array of values to filter on
+
+    for (let queryString in queryStrings) {
+      filterValues.push(queryStrings[queryString]);
+      if (queryString === "nameLike") {
+        whereClause.push(`name ILIKE '%' || $${filterValues.length} || '%'`);
+      } else if (queryString === "minEmployees") {
+        whereClause.push(`num_employees >= $${filterValues.length}`);
+      } else if (queryString === "maxEmployees") {
+        whereClause.push(`num_employees <= $${filterValues.length}`);
+      }
     };
 
-    for (let key in input) {
-      if (input[key] === undefined) {
-        delete mapping[key];
-        delete input[key];
-      };
-    };
-    console.log("input", input);
-    const { setCols, values } = sqlForFilter(input, mapping);
-    const companies = await db.query(`
-              SELECT handle,
-                    name,
-                    description,
-                    num_employees AS "numEmployees",
-                    logo_url      AS "logoUrl"
-              FROM companies
-                WHERE ${setCols}
-                ORDER BY name`,[...values]);
+    let whereSqlString = whereClause.join(' AND ');
+    console.log("whereSqlString= ", whereSqlString);
+    console.log("filterValues= ", filterValues);
+    return {whereSqlString, filterValues};
 
-    return companies.rows;
   }
 
   /** Given a company handle, return data about company.
