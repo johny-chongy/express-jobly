@@ -52,7 +52,7 @@ router.post("/", ensureLoggedIn, async function (req, res, next) {
 router.get("/", authenticateQuery, async function (req, res, next) {
   let companies;
   console.log("req.query.length =", req.query.length);
-  if (!req.query) {
+  if (!req.query || Object.keys(req.query).length === 0) {
     companies = await Company.findAll();
   } else {
     companies = await Company.search(req.query);
