@@ -3,7 +3,7 @@
 const { query } = require("express");
 const db = require("../db");
 const { BadRequestError, NotFoundError } = require("../expressError");
-const { sqlForPartialUpdate, sqlForFilter } = require("../helpers/sql");
+const { sqlForPartialUpdate } = require("../helpers/sql");
 
 /** Related functions for companies. */
 
@@ -57,10 +57,10 @@ class Company {
 
   static async findAll(filter) {
     //TODO: accept search return value (default {})
-    const searchFilter = (await Company.search(filter)) || {
-      whereSqlString: "",
-    };
-    console.log(searchFilter);
+    const searchFilter = Object.keys(filter).length === 0
+                            ? {whereSqlString: ""}
+                            : await Company.search(filter);
+    console.log("searchFilter", searchFilter);
     const companiesRes = await db.query(
       `
         SELECT handle,
@@ -106,8 +106,7 @@ class Company {
     }
 
     let whereSqlString = "WHERE " + whereClause.join(" AND ");
-    console.log("whereSqlString= ", whereSqlString);
-    console.log("filterValues= ", filterValues);
+
     return { whereSqlString, filterValues };
   }
 

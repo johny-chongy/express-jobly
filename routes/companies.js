@@ -6,8 +6,7 @@ const jsonschema = require("jsonschema");
 const express = require("express");
 
 const { BadRequestError } = require("../expressError");
-const { ensureLoggedIn } = require("../middleware/auth");
-const { authenticateQuery } = require("../middleware/query");
+const { ensureLoggedIn, checkAdmin } = require("../middleware/auth");
 const Company = require("../models/company");
 
 const companyNewSchema = require("../schemas/companyNew.json");
@@ -25,7 +24,7 @@ const router = new express.Router();
  * Authorization required: login
  */
 
-router.post("/", ensureLoggedIn, async function (req, res, next) {
+router.post("/", ensureLoggedIn, checkAdmin, async function (req, res, next) {
   const validator = jsonschema.validate(req.body, companyNewSchema, {
     required: true,
   });
@@ -54,7 +53,6 @@ router.get("/", async function (req, res, next) {
    *  2. pass copy through JSON schema
    */
   let query = {};
-  console.log(Number(req.query.maxEmployees));
   for (let queryString in req.query) {
     if (queryString === "nameLike") {
       query[queryString] = req.query.nameLike;
@@ -80,7 +78,7 @@ router.get("/", async function (req, res, next) {
       "minEmployees should be equal to or less than maxEmployees"
     );
   }
-
+  console.log("query", query);
   const companies = await Company.findAll(query);
 
   return res.json({ companies });
@@ -110,7 +108,7 @@ router.get("/:handle", async function (req, res, next) {
  * Authorization required: login
  */
 
-router.patch("/:handle", ensureLoggedIn, async function (req, res, next) {
+router.patch("/:handle", ensureLoggedIn, checkAdmin, async function (req, res, next) {
   const validator = jsonschema.validate(req.body, companyUpdateSchema, {
     required: true,
   });
@@ -128,7 +126,7 @@ router.patch("/:handle", ensureLoggedIn, async function (req, res, next) {
  * Authorization: login
  */
 
-router.delete("/:handle", ensureLoggedIn, async function (req, res, next) {
+router.delete("/:handle", ensureLoggedIn, checkAdmin, async function (req, res, next) {
   await Company.remove(req.params.handle);
   return res.json({ deleted: req.params.handle });
 });

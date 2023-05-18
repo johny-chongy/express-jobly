@@ -35,43 +35,5 @@ function sqlForPartialUpdate(dataToUpdate, jsToSql) {
   // {setCols:`"first_name"=$1, "email"=$2`, values:["Aliya", "newEmail@a.com"]}
 }
 
-/** Helps with filtering values from JS -> SQL
- *
- *  Inputs:
- *    dataToFilter: an object from the req.query (JSON) that contains
- *                        {nameLike: 'm', minEmployees: '100'}
- *
- *    jsToSql: an object that contains mappings between JS variables to
- *             SQL WHERE conditionals (if applicable)
- *                        {nameLike: "name ILIKE",
- *                         minEmployees: "num_employees >=",
- *                         maxEmployees: "num_employees <=",}
- * Outputs:
- *    {
- *        filterWhere: "name ILIKE $1 AND num_employees >= $2 AND num_employees <= $3",
- *        values:["3m", 100, 1000]
- *    }
- *
- *    filterWhere: a string literal used to inject into SQL WHERE to filter
- *    values: an array of values-to-update to inject into SQL for filtering values
- *
- */
-function sqlForFilter(dataToFilter, jsToSql) {
-  const keys = Object.keys(dataToFilter);
 
-  const whereConditionals = keys.map(
-    (queryString, idx) => `${jsToSql[queryString] || queryString} $${idx + 1}`
-  );
-
-  //passing in SQL string pattern '%nameLike%'
-  if (dataToFilter["nameLike"]) {
-    dataToFilter["nameLike"] = `%${dataToFilter.nameLike}%`;
-  }
-
-  return {
-    filterWhere: whereConditionals.join(" AND "),
-    values: Object.values(dataToFilter),
-  };
-}
-
-module.exports = { sqlForPartialUpdate, sqlForFilter };
+module.exports = { sqlForPartialUpdate };

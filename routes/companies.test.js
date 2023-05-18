@@ -11,6 +11,7 @@ const {
   commonAfterEach,
   commonAfterAll,
   u1Token,
+  adminToken
 } = require("./_testCommon");
 
 beforeAll(commonBeforeAll);
@@ -29,16 +30,27 @@ describe("POST /companies", function () {
     numEmployees: 10,
   };
 
-  test("ok for users", async function () {
+  test("ok for admin", async function () {
     const resp = await request(app)
       .post("/companies")
       .send(newCompany)
-      .set("authorization", `Bearer ${u1Token}`);
+      .set("authorization", `Bearer ${adminToken}`);
     expect(resp.statusCode).toEqual(201);
     expect(resp.body).toEqual({
       company: newCompany,
     });
   });
+
+  test("fail for non-admin", async function () {
+    try {
+      const resp = await request(app)
+        .post("/companies")
+        .send(newCompany)
+        .set("authorization", `Bearer ${u1Token}`);
+    } catch (error) {
+      expect(error.message).toBe("Not an admin");
+    }
+    });
 
   test("bad request with missing data", async function () {
     const resp = await request(app)
@@ -47,7 +59,7 @@ describe("POST /companies", function () {
         handle: "new",
         numEmployees: 10,
       })
-      .set("authorization", `Bearer ${u1Token}`);
+      .set("authorization", `Bearer ${adminToken}`);
     expect(resp.statusCode).toEqual(400);
   });
 
@@ -58,7 +70,7 @@ describe("POST /companies", function () {
         ...newCompany,
         logoUrl: "not-a-url",
       })
-      .set("authorization", `Bearer ${u1Token}`);
+      .set("authorization", `Bearer ${adminToken}`);
     expect(resp.statusCode).toEqual(400);
   });
 });
@@ -140,6 +152,16 @@ describe("GET /companies", function () {
     } catch (error) {
       expect(error.message).toEqual(
         "minEmployees should be equal to or less than maxEmployees"
+      );
+    }
+  });
+
+  test("invalid: invalid query string", async function () {
+    try {
+      await request(app).get("/companies?badquerystring=bad");
+    } catch (error) {
+      expect(error.message).toEqual(
+        "instance is not allowed to have the additional property \"badquerystring\""
       );
     }
   });
