@@ -111,7 +111,7 @@ describe("search", function () {
     let filterQueries = await Company.search(query);
     expect(filterQueries).toEqual({
       whereSqlString:
-        "WHERE name ILIKE '%' || $1 || '%' AND num_employees >= $2",
+        "name ILIKE '%' || $1 || '%' AND num_employees >= $2",
       filterValues: ["1", 1],
     });
   });

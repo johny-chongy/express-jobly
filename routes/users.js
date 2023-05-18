@@ -30,7 +30,7 @@ const router = express.Router();
  * Authorization required: login
  **/
 
-router.post("/", ensureLoggedIn, checkAdmin, async function (req, res, next) {
+router.post("/", checkAdmin, async function (req, res, next) {
   const validator = jsonschema.validate(req.body, userNewSchema, {
     required: true,
   });
@@ -51,7 +51,7 @@ router.post("/", ensureLoggedIn, checkAdmin, async function (req, res, next) {
  * Authorization required: login
  **/
 
-router.get("/", ensureLoggedIn, checkAdmin, async function (req, res, next) {
+router.get("/", checkAdmin, async function (req, res, next) {
   const users = await User.findAll();
   return res.json({ users });
 });
@@ -62,7 +62,7 @@ router.get("/", ensureLoggedIn, checkAdmin, async function (req, res, next) {
  *
  * Authorization required: login
  **/
-
+//TODO: refactor checkAdminOrCorrectUser
 router.get(
   "/:username",
   ensureLoggedIn,

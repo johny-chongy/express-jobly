@@ -44,10 +44,9 @@ function ensureLoggedIn(req, res, next) {
  * If not, raises Unauthorized.
  */
 
-async function checkAdmin(req, res, next) {
-  const user = await User.get(res.locals.user?.username);
-
-  if (user.isAdmin == false) {
+function checkAdmin(req, res, next) {
+  const user = res.locals.user;
+  if (!user?.username || user?.isAdmin == false) {
     throw new UnauthorizedError("Not an admin");
   }
 
@@ -58,10 +57,10 @@ async function checkAdmin(req, res, next) {
  * If not, raises Unauthorized.
  */
 
-async function checkAdminOrCorrectUser(req, res, next) {
-  const user = await User.get(res.locals.user?.username);
+function checkAdminOrCorrectUser(req, res, next) {
+  const user = res.locals.user;
 
-  if (user.isAdmin == true || user.username === req.params.username) {
+  if (user.isAdmin == true && user || user.username === req.params.username && user) {
     return next();
   }
 

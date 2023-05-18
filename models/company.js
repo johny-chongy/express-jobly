@@ -57,9 +57,12 @@ class Company {
 
   static async findAll(filter) {
     //TODO: accept search return value (default {})
-    const searchFilter = Object.keys(filter).length === 0
+    const searchFilter = filter === undefined
                             ? {whereSqlString: ""}
                             : await Company.search(filter);
+    const whereText = searchFilter.whereSqlString === ""
+                            ? ""
+                            : "WHERE ";
     console.log("searchFilter", searchFilter);
     const companiesRes = await db.query(
       `
@@ -69,7 +72,7 @@ class Company {
                num_employees AS "numEmployees",
                logo_url      AS "logoUrl"
         FROM companies
-        ${searchFilter.whereSqlString}
+        ${whereText + searchFilter.whereSqlString}
         ORDER BY name`,
       searchFilter.filterValues
     );
@@ -105,7 +108,7 @@ class Company {
       }
     }
 
-    let whereSqlString = "WHERE " + whereClause.join(" AND ");
+    let whereSqlString = whereClause.join(" AND ");
 
     return { whereSqlString, filterValues };
   }
