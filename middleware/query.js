@@ -14,21 +14,22 @@ function authenticateQuery(req, res, next) {
 
     for (let queryString in req.query) {
       if (!validQuery.includes(queryString)) {
-        throw new BadRequestError(
-          `${queryString} is an invalid query string`
-        )
+        throw new BadRequestError(`${queryString} is an invalid query string`);
       }
     }
 
-    if (isNaN(minEmployees) && req.query.minEmployees) {
+    if (
+      (isNaN(minEmployees) && req.query.minEmployees) ||
+      (isNaN(maxEmployees) && req.query.maxEmployees)
+    ) {
       throw new BadRequestError(
         "minEmployees and maxEmployees must be numbers"
-      )
+      );
     }
 
     if (minEmployees && maxEmployees && minEmployees > maxEmployees) {
       throw new BadRequestError(
-        "value for minEmployees should be equal to or less than maxEmployees"
+        "minEmployees should be equal to or less than maxEmployees"
       );
     }
   }
