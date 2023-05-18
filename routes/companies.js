@@ -49,10 +49,10 @@ router.post("/", ensureLoggedIn, async function (req, res, next) {
  * Authorization required: none
  */
 
-router.get("/", authenticateQuery, async function (req, res, next) {
+router.get("/", async function (req, res, next) {
   /** TODO: 1. make copy of req.query
    *  2. pass copy through JSON schema
-  */
+   */
   let query = {};
   console.log(Number(req.query.maxEmployees));
   for (let queryString in req.query) {
@@ -61,7 +61,7 @@ router.get("/", authenticateQuery, async function (req, res, next) {
     } else {
       query[queryString] = Number(req.query[queryString]);
     }
-  };
+  }
 
   const validator = jsonschema.validate(query, companySearchSchema, {
     required: true,
@@ -69,6 +69,16 @@ router.get("/", authenticateQuery, async function (req, res, next) {
   if (!validator.valid) {
     const errs = validator.errors.map((e) => e.stack);
     throw new BadRequestError(errs);
+  }
+
+  if (
+    query.minEmployees &&
+    query.maxEmployees &&
+    query.minEmployees > query.maxEmployees
+  ) {
+    throw new BadRequestError(
+      "minEmployees should be equal to or less than maxEmployees"
+    );
   }
 
   const companies = await Company.findAll(query);

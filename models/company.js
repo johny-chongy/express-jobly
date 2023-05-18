@@ -57,17 +57,22 @@ class Company {
 
   static async findAll(filter) {
     //TODO: accept search return value (default {})
-    const searchFilter = await Company.search(filter) || {};
-    console.log(searchFilter)
-    const companiesRes = await db.query(`
+    const searchFilter = (await Company.search(filter)) || {
+      whereSqlString: "",
+    };
+    console.log(searchFilter);
+    const companiesRes = await db.query(
+      `
         SELECT handle,
                name,
                description,
                num_employees AS "numEmployees",
                logo_url      AS "logoUrl"
         FROM companies
-        ${"WHERE " + searchFilter.whereSqlString}
-        ORDER BY name`, searchFilter.filterValues);
+        ${searchFilter.whereSqlString}
+        ORDER BY name`,
+      searchFilter.filterValues
+    );
 
     return companiesRes.rows;
   }
@@ -81,6 +86,11 @@ class Company {
   static async search(queryStrings) {
     //TODO: return filter WHERE and values to findAll() -> conditional on "" -> just findAll()
     //TODO: use whereClause.length for $ injection value (push into values first -> generate whereClause string)
+
+    if (!queryStrings) {
+      return false;
+    }
+
     const whereClause = []; // array of strings
     const filterValues = []; // array of values to filter on
 
@@ -93,13 +103,12 @@ class Company {
       } else if (queryString === "maxEmployees") {
         whereClause.push(`num_employees <= $${filterValues.length}`);
       }
-    };
+    }
 
-    let whereSqlString = whereClause.join(' AND ');
+    let whereSqlString = "WHERE " + whereClause.join(" AND ");
     console.log("whereSqlString= ", whereSqlString);
     console.log("filterValues= ", filterValues);
-    return {whereSqlString, filterValues};
-
+    return { whereSqlString, filterValues };
   }
 
   /** Given a company handle, return data about company.
