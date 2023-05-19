@@ -96,30 +96,33 @@ class Job {
     return { whereSqlString, filterValues };
   }
 
-  /** Given a job handle, return data about job.
+  /** Given a job id, return data about job.
    *
-   * Returns { handle, name, description, numEmployees, logoUrl, jobs }
-   *   where jobs is [{ id, title, salary, equity, jobHandle }, ...]
+   * Returns { id, title, salary, equity, companyHandle }
    *
    * Throws NotFoundError if not found.
    **/
 
-  static async get(handle) {
+  static async get(jobId) {
+    if (isNaN(jobId)) {
+      throw new BadRequestError("jobId should be a number");
+    }
+
     const jobRes = await db.query(
       `
-        SELECT handle,
-               name,
-               description,
-               num_employees AS "numEmployees",
-               logo_url      AS "logoUrl"
-        FROM companies
-        WHERE handle = $1`,
-      [handle]
+        SELECT id,
+               title,
+               salary,
+               equity,
+               company_handle AS "companyHandle"
+        FROM jobs
+        WHERE id = $1`,
+      [jobId]
     );
 
     const job = jobRes.rows[0];
 
-    if (!job) throw new NotFoundError(`No job: ${handle}`);
+    if (!job) throw new NotFoundError(`No job: ${jobId}`);
 
     return job;
   }
@@ -137,8 +140,12 @@ class Job {
    */
 
   static async update(jobId, data) {
+    if (isNaN(jobId)) {
+      throw new BadRequestError("jobId should be a number");
+    }
+
     const { setCols, values } = sqlForPartialUpdate(data, {
-      companyHandle: "company_handle"
+      companyHandle: "company_handle",
     });
     const idVarIdx = "$" + (values.length + 1);
     const querySql = `
@@ -154,7 +161,7 @@ class Job {
     // console.log('querysql', querySql);
     const result = await db.query(querySql, [...values, jobId]);
     const job = result.rows[0];
-    console.log('job',job)
+    console.log("job", job);
     if (!job) throw new NotFoundError(`No job with id ${jobId}`);
 
     return job;
@@ -165,18 +172,22 @@ class Job {
    * Throws NotFoundError if job not found.
    **/
 
-  static async remove(handle) {
+  static async remove(jobId) {
+    if (isNaN(jobId)) {
+      throw new BadRequestError("jobId should be a number");
+    }
+
     const result = await db.query(
       `
         DELETE
-        FROM companies
-        WHERE handle = $1
-        RETURNING handle`,
-      [handle]
+        FROM jobs
+        WHERE id = $1
+        RETURNING id`,
+      [jobId]
     );
     const job = result.rows[0];
 
-    if (!job) throw new NotFoundError(`No job: ${handle}`);
+    if (!job) throw new NotFoundError(`No job: ${jobId}`);
   }
 }
 
