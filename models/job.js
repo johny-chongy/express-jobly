@@ -44,19 +44,19 @@ class Job {
   static async findAll(filter) {
     //TODO: accept search return value (default {})
     const searchFilter =
-      filter === undefined ? { whereSqlString: "" } : await job.search(filter);
+      filter === undefined ? { whereSqlString: "" } : await Job.search(filter);
     const whereText = searchFilter.whereSqlString === "" ? "" : "WHERE ";
     console.log("searchFilter", searchFilter);
     const companiesRes = await db.query(
       `
-        SELECT handle,
-               name,
-               description,
-               num_employees AS "numEmployees",
-               logo_url      AS "logoUrl"
-        FROM companies
+        SELECT id,
+               title,
+               salary,
+               equity,
+               company_handle      AS "companyHandle"
+        FROM jobs
         ${whereText + searchFilter.whereSqlString}
-        ORDER BY name`,
+        ORDER BY id`,
       searchFilter.filterValues
     );
 
@@ -79,19 +79,23 @@ class Job {
 
     const whereClause = []; // array of strings
     const filterValues = []; // array of values to filter on
+    const hasEquity = queryStrings["hasEquity"] ? "equity IS NOT NULL" : "";
+    console.log("hasEquity", hasEquity);
 
     for (let queryString in queryStrings) {
       filterValues.push(queryStrings[queryString]);
-      if (queryString === "nameLike") {
-        whereClause.push(`name ILIKE '%' || $${filterValues.length} || '%'`);
-      } else if (queryString === "minEmployees") {
-        whereClause.push(`num_employees >= $${filterValues.length}`);
-      } else if (queryString === "maxEmployees") {
-        whereClause.push(`num_employees <= $${filterValues.length}`);
+      if (queryString === "title") {
+        whereClause.push(`title ILIKE '%' || $${filterValues.length} || '%'`);
+      } else if (queryString === "minSalary") {
+        whereClause.push(`salary >= $${filterValues.length} AND salary IS NOT NULL`);
+      } else if (queryString === "hasEquity") {
+        whereClause.push(hasEquity);
+        filterValues.pop();
       }
     }
 
-    let whereSqlString = whereClause.join(" AND ");
+    let whereSqlString = whereClause.filter(clause => clause !== "").join(" AND ");
+    console.log('wherestring', whereSqlString);
 
     return { whereSqlString, filterValues };
   }

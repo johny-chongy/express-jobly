@@ -53,14 +53,16 @@ router.get("/", async function (req, res, next) {
    */
   let query = {};
   for (let queryString in req.query) {
-    if (queryString === "nameLike") {
-      query[queryString] = req.query.nameLike;
-    } else {
+    if (queryString === "hasEquity") {
+      query[queryString] = req.query.hasEquity === "true" ? true : false;
+    } else if (queryString === "minSalary") {
       query[queryString] = Number(req.query[queryString]);
+    } else {
+      query[queryString] = req.query[queryString];
     }
   }
 
-  const validator = jsonschema.validate(query, companySearchSchema, {
+  const validator = jsonschema.validate(query, jobSearchSchema, {
     required: true,
   });
   if (!validator.valid) {
@@ -68,19 +70,10 @@ router.get("/", async function (req, res, next) {
     throw new BadRequestError(errs);
   }
 
-  if (
-    query.minEmployees &&
-    query.maxEmployees &&
-    query.minEmployees > query.maxEmployees
-  ) {
-    throw new BadRequestError(
-      "minEmployees should be equal to or less than maxEmployees"
-    );
-  }
   console.log("query", query);
-  const companies = await Company.findAll(query);
+  const jobs = await Job.findAll(query);
 
-  return res.json({ companies });
+  return res.json({ jobs });
 });
 
 /** GET /[id]  =>  { job }
