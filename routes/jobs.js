@@ -95,19 +95,19 @@ router.get("/:jobId", async function (req, res, next) {
   return res.json({ job });
 });
 
-/** PATCH /[handle] { fld1, fld2, ... } => { company }
+/** PATCH /[jobId] { fld1, fld2, ... } => { job }
  *
- * Patches company data.
+ * Patches job data.
  *
- * fields can be: { name, description, numEmployees, logo_url }
+ * fields can be: { title, salary, equity }
  *
- * Returns { handle, name, description, numEmployees, logo_url }
+ * Returns { id, title, salary, equity, companyHandle }
  *
  * Authorization required: login
  */
 
-router.patch("/:handle", checkAdmin, async function (req, res, next) {
-  const validator = jsonschema.validate(req.body, companyUpdateSchema, {
+router.patch("/:jobId", checkAdmin, async function (req, res, next) {
+  const validator = jsonschema.validate(req.body, jobUpdateSchema, {
     required: true,
   });
   if (!validator.valid) {
@@ -115,18 +115,18 @@ router.patch("/:handle", checkAdmin, async function (req, res, next) {
     throw new BadRequestError(errs);
   }
 
-  const company = await Company.update(req.params.handle, req.body);
-  return res.json({ company });
+  const job = await Job.update(Number(req.params.jobId), req.body);
+  return res.json({ job });
 });
 
-/** DELETE /[handle]  =>  { deleted: handle }
+/** DELETE /[jobId]  =>  { deleted: jobId }
  *
  * Authorization: login
  */
 
-router.delete("/:handle", checkAdmin, async function (req, res, next) {
-  await Company.remove(req.params.handle);
-  return res.json({ deleted: req.params.handle });
+router.delete("/:jobId", checkAdmin, async function (req, res, next) {
+  await Job.remove(Number(req.params.jobId));
+  return res.json({ deleted: req.params.jobId });
 });
 
 module.exports = router;
