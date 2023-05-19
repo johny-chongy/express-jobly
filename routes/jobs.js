@@ -15,26 +15,25 @@ const jobSearchSchema = require("../schemas/jobSearch.json");
 
 const router = new express.Router();
 
-/** POST / { company } =>  { company }
+/** POST / { job } =>  { job }
  *
- * company should be { handle, name, description, numEmployees, logoUrl }
- *
- * Returns { handle, name, description, numEmployees, logoUrl }
+ * company should be { id, title, salary, equity, companyHandle }
  *
  * Authorization required: login
  */
 
 router.post("/", checkAdmin, async function (req, res, next) {
-  const validator = jsonschema.validate(req.body, companyNewSchema, {
+  const validator = jsonschema.validate(req.body, jobNewSchema, {
     required: true,
   });
   if (!validator.valid) {
     const errs = validator.errors.map((e) => e.stack);
     throw new BadRequestError(errs);
   }
+  console.log("passed validator");
 
-  const company = await Company.create(req.body);
-  return res.status(201).json({ company });
+  const job = await Job.create(req.body);
+  return res.status(201).json({ job });
 });
 
 /** GET /  =>
@@ -84,17 +83,16 @@ router.get("/", async function (req, res, next) {
   return res.json({ companies });
 });
 
-/** GET /[handle]  =>  { company }
+/** GET /[id]  =>  { job }
  *
- *  Company is { handle, name, description, numEmployees, logoUrl, jobs }
- *   where jobs is [{ id, title, salary, equity }, ...]
+ *  Job is { id, title, salary, equity, companyHandle }
  *
  * Authorization required: none
  */
 
-router.get("/:handle", async function (req, res, next) {
-  const company = await Company.get(req.params.handle);
-  return res.json({ company });
+router.get("/:jobId", async function (req, res, next) {
+  const job = await Job.get(req.params.jobId);
+  return res.json({ job });
 });
 
 /** PATCH /[handle] { fld1, fld2, ... } => { company }
