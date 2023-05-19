@@ -39,6 +39,7 @@ async function commonBeforeAll() {
   VALUES ('j1', 100000, 0.01, 'c1'),
          ('j2', 150000, 0.05, 'c2'),
          ('j3', 200000, 0.1, 'c3')`);
+
 }
 
 async function commonBeforeEach() {
@@ -57,5 +58,5 @@ module.exports = {
   commonBeforeAll,
   commonBeforeEach,
   commonAfterEach,
-  commonAfterAll,
+  commonAfterAll
 };

@@ -31,7 +31,7 @@ class Job {
       [title, salary, equity, companyHandle]
     );
     const job = result.rows[0];
-    console.log("job= ", job);
+    // console.log("job= ", job);
 
     return job;
   }
@@ -129,34 +129,33 @@ class Job {
    * This is a "partial update" --- it's fine if data doesn't contain all the
    * fields; this only changes provided ones.
    *
-   * Data can include: {name, description, numEmployees, logoUrl}
+   * Data can include: {title, salary, equity}
    *
-   * Returns {handle, name, description, numEmployees, logoUrl}
+   * Returns {id, title, salary, equity, companyHandle}
    *
    * Throws NotFoundError if not found.
    */
 
-  static async update(handle, data) {
+  static async update(jobId, data) {
     const { setCols, values } = sqlForPartialUpdate(data, {
-      numEmployees: "num_employees",
-      logoUrl: "logo_url",
+      companyHandle: "company_handle"
     });
-    const handleVarIdx = "$" + (values.length + 1);
-
+    const idVarIdx = "$" + (values.length + 1);
     const querySql = `
-        UPDATE companies
-        SET ${setCols}
-        WHERE handle = ${handleVarIdx}
-        RETURNING
-            handle,
-            name,
-            description,
-            num_employees AS "numEmployees",
-            logo_url AS "logoUrl"`;
-    const result = await db.query(querySql, [...values, handle]);
+        UPDATE jobs
+          SET ${setCols}
+          WHERE id = ${idVarIdx}
+          RETURNING
+              id,
+              title,
+              salary,
+              equity,
+              company_handle AS "companyHandle"`;
+    // console.log('querysql', querySql);
+    const result = await db.query(querySql, [...values, jobId]);
     const job = result.rows[0];
-
-    if (!job) throw new NotFoundError(`No job: ${handle}`);
+    console.log('job',job)
+    if (!job) throw new NotFoundError(`No job with id ${jobId}`);
 
     return job;
   }
